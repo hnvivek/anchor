@@ -119,7 +119,7 @@ SAMPLE_ANSWER = (
 def _make_checker():
     if os.getenv("ANCHOR_CHECKER", "nli").lower() == "coverage":
         return CoverageChecker()
-    return NLIChecker(lex_fallback=True, negation_gate=True)
+    return NLIChecker(lex_fallback=True, negation_gate=True, retriever="semantic")
 
 
 _CHECKER = _make_checker()

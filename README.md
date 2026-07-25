@@ -89,7 +89,7 @@ Each claim is verified through a pluggable checker interface:
 | **lex confirmer + negation gate** | clears paraphrase false-alarms; keeps "do **not** need vs **must**" flagged | pure Python, free |
 | **LLMJudgeChecker** | clears the last false alarms (precision confirmer) | optional, your key |
 
-The recommended core is **NLI + lex + neg**: NLI's entailment/contradiction are reliable; when NLI is unsure ("neutral"), a lexical confirmer clears paraphrases and a negation/antonym gate keeps opposites flagged. Every grounded claim returns an exact citation; every verdict appends to an append-only JSONL audit log.
+The recommended core uses **semantic retrieval** (embeddings) to find the right source by meaning, then verifies with **NLI + lex + neg**: NLI's entailment/contradiction are reliable; when NLI is unsure ("neutral"), a lexical confirmer clears paraphrases and a negation/antonym gate keeps opposites flagged. (Lexical retrieval is also available via `retriever="lexical"` - faster, but more easily fooled by word-similar distractor docs.) Every grounded claim returns an exact citation; every verdict appends to an append-only JSONL audit log.
 
 ## Project layout
 
