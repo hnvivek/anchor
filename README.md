@@ -8,11 +8,11 @@ Spell-check, but for facts. Give `anchor` an AI-generated answer and the source 
 
 ## Screenshots
 
-The playground highlights the answer in place - blue underline = cited (hover for the source), red underline = needs review:
+Two-pane evidence viewer: the verified answer on the left (blue = cited, red = needs review); click a citation number to jump to its source chunk on the right, which flashes.
 
-![Verified answer - two claims cited in blue, one flagged](docs/ui-result.png)
+![Verified answer + source evidence, two-pane](docs/ui-result.png)
 
-![Input - sample source + AI answer](docs/ui-input.png)
+![Input - sources + AI answer](docs/ui-input.png)
 
 ## Usage in your code
 

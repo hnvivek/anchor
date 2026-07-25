@@ -80,6 +80,11 @@ def _sentences(text: str) -> list[str]:
     return [s for s, _, _ in _spans(text)]
 
 
+def chunk(text: str) -> list[dict]:
+    """Split text into sentence chunks with char offsets - for evidence/citation UIs."""
+    return [{"text": s, "start": a, "end": b} for s, a, b in _spans(text)]
+
+
 def _tokens(text: str) -> list[str]:
     return re.findall(r"[a-z0-9]+", text.lower())
 

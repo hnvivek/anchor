@@ -23,7 +23,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
-from anchor import CoverageChecker, NLIChecker, Source, Verifier
+from anchor import CoverageChecker, NLIChecker, Source, Verifier, chunk
 
 _HERE = Path(__file__).parent
 
@@ -103,7 +103,8 @@ def verify(req: VerifyReq):
             cited.append(cit)
             entry["citation"] = cit
         out.append(entry)
-    return {"claims": out}
+    chunks = [{"id": s.id, "chunks": chunk(s.text)} for s in srcs]
+    return {"claims": out, "chunks": chunks}
 
 
 @app.get("/")
