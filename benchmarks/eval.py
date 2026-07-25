@@ -126,7 +126,7 @@ def main():
     results = [run(lambda: EnsembleChecker(CoverageChecker()), "Cov+Num"),
                run(lambda: NLIChecker(), "NLI-only"),
                run(lambda: NLIChecker(lex_fallback=True), "NLI+lex"),
-               run(lambda: NLIChecker(lex_fallback=True, negation_gate=True), "NLI+lex+neg")]
+               run(lambda: NLIChecker(lex_fallback=True, negation_gate=True, retriever="semantic"), "NLI+lex+neg")]
 
     # --- headline metrics ---------------------------------------------------
     print(f"\n  {'checker':<18}{'acc':>6}{'prec':>7}{'rec':>7}{'f1':>6}{'med ms':>9}")
