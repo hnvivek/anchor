@@ -58,6 +58,7 @@ python examples/cite.py            # verify an AI answer against a source doc
 python benchmarks/eval.py          # the stress-test eval (precision / recall / latency)
 python benchmarks/bench_fever.py   # the FEVER public benchmark
 python benchmarks/bench.py         # benchmark on benchmarks/bench.json - or YOUR own dataset
+python benchmarks/distractors.py   # retrieval robustness vs decoy docs (lexical vs semantic)
 ```
 
 ### Playground UI

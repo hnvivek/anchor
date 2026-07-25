@@ -266,6 +266,34 @@ def _best_span(claim: str, sources: list[Source]):
     return best
 
 
+class _SemIndex:
+    """Embeds source sentences once; retrieves the best by cosine to the claim.
+    More robust than lexical overlap when the corpus has word-similar decoy docs."""
+    def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
+        self._model_name = model_name
+        self._model = None
+        self._key = None
+        self._labels = []
+        self._embs = None
+
+    def best_span(self, claim: str, sources: list[Source]):
+        if self._model is None:
+            from sentence_transformers import SentenceTransformer
+            self._model = SentenceTransformer(self._model_name)
+        key = tuple((s.id, s.text) for s in sources)
+        if self._key != key:
+            self._labels = [(s.id, sent, st, en)
+                            for s in sources for sent, st, en in _spans(s.text)]
+            self._embs = self._model.encode([sent for _, sent, _, _ in self._labels],
+                                            normalize_embeddings=True)
+            self._key = key
+        if not self._labels:
+            return None
+        cemb = self._model.encode([claim], normalize_embeddings=True)[0]
+        i = int((self._embs @ cemb).argmax())
+        return self._labels[i]
+
+
 class NLIChecker:
     """Local transformer (NLI): labels a claim vs its best-matching source sentence
     as entailment => grounded, contradiction/neutral => not. Catches binding and
@@ -275,13 +303,15 @@ class NLIChecker:
     `pip install sentencepiece` upgrades to the stronger model."""
 
     def __init__(self, model_name: str | None = None, lex_fallback: bool = False,
-                 negation_gate: bool = False):
+                 negation_gate: bool = False, retriever: str = "lexical"):
         self.model_name = model_name
         self.lex_fallback = lex_fallback
         self.negation_gate = negation_gate
+        self.retriever = retriever
         self._pipe = None
         self._unavailable = False
         self._lex = None
+        self._sem = _SemIndex() if retriever == "semantic" else None
 
     def _lex_grounded(self, claim: str, sources: list[Source]) -> bool:
         """Lexical overlap check, used only to clear NLI 'neutral' paraphrase false-alarms."""
@@ -316,7 +346,7 @@ class NLIChecker:
         self._ensure()
         if self._unavailable:
             return Claim(claim, grounded=True, score=1.0)  # abstain -> let other tiers decide
-        span = _best_span(claim, sources)
+        span = self._sem.best_span(claim, sources) if self._sem else _best_span(claim, sources)
         if not span:
             return Claim(claim, grounded=False, score=0.0)
         doc_id, premise, start, end = span
