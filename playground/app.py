@@ -23,7 +23,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
-from anchor import CoverageChecker, NLIChecker, Source, annotate
+from anchor import CoverageChecker, NLIChecker, Source, Verifier
 
 _HERE = Path(__file__).parent
 
@@ -47,7 +47,9 @@ SAMPLE_ANSWER = (
 
 
 def _make_checker():
-    return CoverageChecker() if os.getenv("ANCHOR_CHECKER", "nli").lower() == "coverage" else NLIChecker()
+    if os.getenv("ANCHOR_CHECKER", "nli").lower() == "coverage":
+        return CoverageChecker()
+    return NLIChecker(lex_fallback=True, negation_gate=True)
 
 
 _CHECKER = _make_checker()
@@ -83,16 +85,25 @@ def samples():
     return {"samples": SAMPLES, "answer": SAMPLE_ANSWER}
 
 
+def _snippet_for(c, sources):
+    src = next((s for s in sources if s.id == c.cite_doc), None)
+    return src.text[c.cite_start:c.cite_end].strip() if src and c.cite_start >= 0 else ""
+
+
 @app.post("/api/verify")
 def verify(req: VerifyReq):
     srcs = [Source(id=s.id, text=s.text) for s in req.sources]
-    ans = annotate(req.answer, srcs, _CHECKER)
-    return {
-        "text": ans.text,
-        "citations": [{"n": c.n, "doc_id": c.doc_id, "start": c.start, "end": c.end,
-                       "snippet": c.snippet} for c in ans.citations],
-        "flags": ans.flags,
-    }
+    claims = Verifier(srcs, _CHECKER).verify(req.answer)
+    out, cited = [], []
+    for c in claims:
+        entry = {"text": c.text, "grounded": c.grounded, "citation": None}
+        if c.grounded and c.cite_doc:
+            cit = {"n": len(cited) + 1, "doc_id": c.cite_doc,
+                   "start": c.cite_start, "end": c.cite_end, "snippet": _snippet_for(c, srcs)}
+            cited.append(cit)
+            entry["citation"] = cit
+        out.append(entry)
+    return {"claims": out}
 
 
 @app.get("/")

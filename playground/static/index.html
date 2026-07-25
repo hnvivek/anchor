@@ -6,91 +6,122 @@
 <title>anchor — fact-check for AI outputs</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-  .badge{display:inline-block;background:#eef2ff;color:#4338ca;border-radius:5px;padding:1px 6px;font-size:.7rem;font-weight:700;margin:0 1px}
-  .warn{display:inline-block;background:#fef2f2;color:#b91c1c;border-radius:5px;padding:1px 6px;font-size:.7rem;font-weight:700;margin:0 2px}
+  .badge{display:inline-block;background:#eef2ff;color:#4338ca;border-radius:5px;padding:0 5px;font-size:.68rem;font-weight:700;margin:0 1px;text-decoration:none}
+  .badge:hover{background:#e0e7ff}
+  .warn{display:inline-block;background:#fef2f2;color:#b91c1c;border-radius:5px;padding:1px 6px;font-size:.72rem;font-weight:700}
+  .ok{display:inline-block;background:#ecfdf5;color:#047857;border-radius:5px;padding:1px 6px;font-size:.72rem;font-weight:700}
+  .claim-g{border-bottom:2px solid #2563eb;cursor:help}
+  .claim-g:hover{background:#eff6ff}
+  .claim-bad{border-bottom:2px wavy #dc2626;cursor:help;background:#fef2f2}
+  .claim-bad:hover{background:#fee2e2}
 </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen">
-<div class="max-w-4xl mx-auto px-6 py-10">
+<div class="max-w-3xl mx-auto px-6 py-10">
 
-  <header class="mb-8">
+  <header class="mb-6">
     <h1 class="text-3xl font-bold tracking-tight">⚓ anchor</h1>
-    <p class="text-slate-500 mt-1">Fact-check for AI outputs. Add a source doc + an AI answer, hit <b>Verify</b> — grounded claims get an exact citation; fabrications get flagged.</p>
+    <p class="text-slate-500 mt-1">Fact-check for AI outputs. Add the source an AI <i>should</i> have used, paste what it said, hit <b>Verify</b> — the answer is highlighted in place.</p>
+    <p class="text-xs text-slate-400 mt-2">
+      <span style="border-bottom:2px solid #2563eb">blue underline</span> = cited (hover for the source)
+      &nbsp;·&nbsp;
+      <span style="border-bottom:2px wavy #dc2626;background:#fef2f2">red underline</span> = needs review (not in any source)
+    </p>
   </header>
 
-  <section class="bg-white rounded-xl border border-slate-200 p-5 mb-5 shadow-sm">
-    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-      <h2 class="font-semibold">1 · Source documents</h2>
-      <div id="samplebtns" class="flex flex-wrap gap-2"></div>
-    </div>
+  <!-- 1. Sources -->
+  <section class="bg-white rounded-xl border border-slate-200 p-5 mb-4 shadow-sm">
+    <h2 class="font-semibold mb-3">1 · Sources <span class="text-slate-400 font-normal text-sm">(the ground truth)</span></h2>
     <div id="sources" class="space-y-2 mb-3"></div>
+    <div class="flex flex-wrap items-end gap-2 mb-2">
+      <div>
+        <label class="block text-xs text-slate-500 mb-1">Load a sample source</label>
+        <select id="sampleselect" class="text-sm rounded-lg border border-slate-300 px-2 py-1.5 bg-white"></select>
+      </div>
+      <button onclick="addSelectedSample()" class="text-sm bg-slate-800 text-white rounded-lg px-3 py-1.5">Add</button>
+    </div>
     <details class="text-sm">
-      <summary class="cursor-pointer text-slate-500">+ paste your own source</summary>
+      <summary class="cursor-pointer text-slate-500">+ paste your own source document</summary>
       <textarea id="customsrc" rows="3" class="mt-2 w-full rounded-lg border border-slate-300 p-2 text-sm" placeholder="Paste a document the AI should have drawn from..."></textarea>
       <button onclick="addCustom()" class="mt-2 text-sm bg-slate-800 text-white rounded-lg px-3 py-1">Add source</button>
     </details>
   </section>
 
-  <section class="bg-white rounded-xl border border-slate-200 p-5 mb-5 shadow-sm">
-    <h2 class="font-semibold mb-3">2 · AI answer</h2>
+  <!-- 2. Answer -->
+  <section class="bg-white rounded-xl border border-slate-200 p-5 mb-4 shadow-sm">
+    <h2 class="font-semibold mb-3">2 · AI answer to check</h2>
     <textarea id="answer" rows="4" class="w-full rounded-lg border border-slate-300 p-3 text-sm"></textarea>
     <button id="run" onclick="verify()" class="mt-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg px-5 py-2">Verify</button>
   </section>
 
+  <!-- 3. Results -->
   <section id="resultsec" class="hidden bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-    <h2 class="font-semibold mb-3">3 · Verified answer</h2>
-    <div id="result" class="leading-relaxed mb-5"></div>
-    <div class="grid md:grid-cols-2 gap-5">
-      <div class="min-w-0">
-        <h3 class="text-sm font-semibold text-slate-500 mb-2">Citations</h3>
-        <div id="citations" class="text-sm space-y-2"></div>
-      </div>
-      <div class="min-w-0">
-        <h3 class="text-sm font-semibold text-slate-500 mb-2">Flagged (not in any source)</h3>
-        <ul id="flags" class="text-sm list-disc pl-5"></ul>
-      </div>
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="font-semibold">3 · Verified answer</h2>
+      <div id="summary" class="text-sm"></div>
     </div>
+    <div id="result" class="leading-relaxed mb-5 p-4 rounded-lg bg-slate-50 border border-slate-100 text-[15px]"></div>
+    <h3 class="text-sm font-semibold text-slate-500 mb-2">Citations <span class="text-slate-400 font-normal">(the source text each claim was matched against — hover a claim above, or click its number)</span></h3>
+    <div id="citations" class="text-sm space-y-2"></div>
   </section>
 
-  <footer class="text-xs text-slate-400 mt-10">anchor — a runtime grounding gate for LLM outputs. Local NLI verification; every citation points to an exact doc + char span.</footer>
+  <footer class="text-xs text-slate-400 mt-10">anchor — a runtime grounding gate for LLM outputs. Local NLI verification; every citation quotes the exact source text.</footer>
 </div>
 
 <script>
 let sources = [];
 const $ = id => document.getElementById(id);
 const esc = s => (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const docName = id => { const s = sources.find(x => x.id === id); return s ? (s.name || s.id) : id; };
 
 async function loadSamples(){
-  const r = await fetch('/api/samples').then(r=>r.json());
+  const r = await fetch('/api/samples').then(r => r.json());
   window.SAMPLES = r.samples;
-  $('samplebtns').innerHTML = r.samples.map((s,i)=>
-    `<button onclick="addSample(${i})" class="text-xs bg-slate-100 hover:bg-slate-200 rounded-lg px-2 py-1">+ ${esc(s.name)}</button>`).join('');
+  $('sampleselect').innerHTML = r.samples.map((s,i) => `<option value="${i}">${esc(s.name)}</option>`).join('');
   $('answer').value = r.answer;
   addSample(0);
 }
+function addSelectedSample(){ addSample(parseInt($('sampleselect').value)); }
 function addSample(i){ sources.push(window.SAMPLES[i]); renderSources(); }
 function addCustom(){
   const t = $('customsrc').value.trim(); if(!t) return;
-  sources.push({id:'custom-'+Date.now(), name:'Custom', text:t});
+  sources.push({id:'custom-'+Date.now(), name:'My document', text:t});
   $('customsrc').value=''; renderSources();
 }
 function removeSource(i){ sources.splice(i,1); renderSources(); }
 function renderSources(){
-  $('sources').innerHTML = sources.length ? sources.map((s,i)=>`
-    <div class="rounded-lg border border-slate-200 p-2 text-sm">
-      <div class="flex justify-between"><b>${esc(s.name||s.id)}</b><button onclick="removeSource(${i})" class="text-slate-400 hover:text-red-600">✕</button></div>
-      <div class="text-slate-500 text-xs mt-1">${esc(s.text)}</div>
-    </div>`).join('') : '<div class="text-slate-400 text-sm">No sources yet — add a sample or paste your own.</div>';
+  $('sources').innerHTML = sources.length ? sources.map((s,i) => `
+    <div class="rounded-lg border border-slate-200 p-2.5 text-sm">
+      <div class="flex justify-between items-center">
+        <b>${esc(s.name||s.id)}</b>
+        <button onclick="removeSource(${i})" class="text-slate-400 hover:text-red-600 text-xs">remove</button>
+      </div>
+      <div class="text-slate-500 text-xs mt-1 leading-relaxed">${esc(s.text)}</div>
+    </div>`).join('') : '<div class="text-slate-400 text-sm">No sources yet — load a sample or paste your own above.</div>';
 }
 async function verify(){
   $('run').disabled = true; $('run').textContent = 'Verifying…';
   try {
     const r = await fetch('/api/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sources, answer:$('answer').value})}).then(r=>r.json());
     $('resultsec').classList.remove('hidden');
-    $('result').innerHTML = esc(r.text).replace(/\[(\d+)\]/g,'<span class="badge">[$1]</span>').replace(/⚠️/g,'<span class="warn">⚠ ungrounded</span>');
-    $('citations').innerHTML = r.citations.length ? r.citations.map(c=>
-      `<div class="break-words"><span class="badge">[${c.n}]</span> <b>${esc(c.doc_id)}:${c.start}-${c.end}</b><br><span class="text-slate-500">"${esc(c.snippet)}"</span></div>`).join('') : '<div class="text-slate-400">None</div>';
-    $('flags').innerHTML = r.flags.length ? r.flags.map(f=>`<li>${esc(f)}</li>`).join('') : '<li class="text-emerald-600">None — every claim is grounded ✅</li>';
+    $('result').innerHTML = (r.claims||[]).map(c => {
+      if (c.citation){
+        const tip = `Cited — ${docName(c.citation.doc_id)}: “${c.citation.snippet}”`;
+        return `<span class="claim-g" title="${esc(tip)}">${esc(c.text)}<a href="#cite-${c.citation.n}" class="badge ml-0.5">[${c.citation.n}]</a></span> `;
+      }
+      if (c.grounded) return `<span>${esc(c.text)}</span> `;
+      return `<span class="claim-bad" title="Not found in any source">${esc(c.text)}</span> `;
+    }).join('') || '<span class="text-slate-400">No claims.</span>';
+    const ng = (r.claims||[]).filter(c=>c.grounded).length;
+    const nf = (r.claims||[]).length - ng;
+    $('summary').innerHTML = `<span class="ok">${ng} cited</span> · <span class="warn">${nf} need review</span>`;
+    const cits = (r.claims||[]).filter(c=>c.citation).map(c=>c.citation);
+    $('citations').innerHTML = cits.length ? cits.map(c => `
+      <div id="cite-${c.n}" class="rounded-lg border border-slate-200 p-2.5">
+        <span class="badge">[${c.n}]</span> <b>${esc(docName(c.doc_id))}</b>
+        <div class="text-slate-700 italic mt-1">“${esc(c.snippet)}”</div>
+        <div class="text-xs text-slate-400 mt-1">exact match at characters ${c.start}–${c.end} of the source</div>
+      </div>`).join('') : '<div class="text-slate-400">No citations — nothing was grounded.</div>';
     $('resultsec').scrollIntoView({behavior:'smooth'});
   } catch(e){
     $('resultsec').classList.remove('hidden');

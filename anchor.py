@@ -96,6 +96,37 @@ def _content(text: str) -> list[str]:
     return [_stem(t) for t in _tokens(text) if t not in _STOP]
 
 
+# --- negation / antonym helpers: a cheap "opposite direction" signal --------
+
+_NEG_CUES = {"not", "no", "never", "none", "cannot", "cant", "neither", "nor",
+             "without", "nobody", "nothing", "nowhere", "hardly", "barely"}
+_NEG_PREFIXES = ("dis", "un", "im", "ir", "il", "non")
+
+
+def _negated(text: str) -> bool:
+    low = text.lower()
+    toks = set(_tokens(text))
+    return "n't" in low or any(c in toks for c in _NEG_CUES)
+
+
+def _opposes(claim: str, source: str) -> bool:
+    """Heuristic 'opposite direction' signal: a negation-cue mismatch between claim
+    and source, or an antonym-prefix flip (dis-/un-/in-/... ). Catches 'do NOT need
+    vs MUST' and 'honesty vs dishonesty' that lexical overlap alone can't see."""
+    if _negated(claim) != _negated(source):
+        return True
+    ct, st = set(_tokens(claim)), set(_tokens(source))
+    for w in ct:
+        for p in _NEG_PREFIXES:
+            if w.startswith(p) and len(w) > len(p) + 3 and w[len(p):] in st:
+                return True
+    for w in st:
+        for p in _NEG_PREFIXES:
+            if w.startswith(p) and len(w) > len(p) + 3 and w[len(p):] in ct:
+                return True
+    return False
+
+
 # --- checker 1: coverage (pure Python, no deps) -----------------------------
 
 class CoverageChecker:
@@ -238,10 +269,20 @@ class NLIChecker:
     FEVER-NLI if sentencepiece is installed, else the lighter distilbert-mnli.
     `pip install sentencepiece` upgrades to the stronger model."""
 
-    def __init__(self, model_name: str | None = None):
+    def __init__(self, model_name: str | None = None, lex_fallback: bool = False,
+                 negation_gate: bool = False):
         self.model_name = model_name
+        self.lex_fallback = lex_fallback
+        self.negation_gate = negation_gate
         self._pipe = None
         self._unavailable = False
+        self._lex = None
+
+    def _lex_grounded(self, claim: str, sources: list[Source]) -> bool:
+        """Lexical overlap check, used only to clear NLI 'neutral' paraphrase false-alarms."""
+        if self._lex is None:
+            self._lex = CoverageChecker()
+        return self._lex.check(claim, sources).grounded
 
     def available(self) -> bool:
         return not self._unavailable
@@ -277,7 +318,18 @@ class NLIChecker:
         out = self._pipe({"text": premise, "text_pair": claim})
         probs = {d["label"].lower(): d["score"] for d in out}
         ent = probs.get("entailment", 0.0)
-        grounded = ent >= probs.get("contradiction", 0.0) and ent >= probs.get("neutral", 0.0)
+        contra = probs.get("contradiction", 0.0)
+        neutral = probs.get("neutral", 0.0)
+        if ent >= contra and ent >= neutral:
+            grounded = True                            # entailment: reliable
+        elif contra >= neutral:
+            grounded = False                           # contradiction: reliable
+        elif self.lex_fallback:
+            # neutral: only clear if NO opposition signal AND good lexical overlap
+            opposes = contra >= 0.30 or (self.negation_gate and _opposes(claim, premise))
+            grounded = (not opposes) and self._lex_grounded(claim, sources)
+        else:
+            grounded = False                           # neutral, no fallback -> unsupported
         if grounded:
             return Claim(claim, grounded=True, score=ent, backed_by=f"[{doc_id}] {premise}",
                          cite_doc=doc_id, cite_start=start, cite_end=end)

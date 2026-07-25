@@ -14,9 +14,8 @@ from __future__ import annotations
 import statistics
 import time
 
-from anchor import (AuditLog, CascadeChecker, ConfirmedChecker, CoverageChecker,
-                    EnsembleChecker, LLMJudgeChecker, NLIChecker, SemanticChecker,
-                    Source, Verifier)
+from anchor import (AuditLog, CoverageChecker, EnsembleChecker, NLIChecker,
+                    SemanticChecker, Source, Verifier)
 
 PTO = Source(
     id="PTO-Policy",
@@ -126,7 +125,8 @@ def main():
 
     results = [run(lambda: EnsembleChecker(CoverageChecker()), "Cov+Num"),
                run(lambda: NLIChecker(), "NLI-only"),
-               run(lambda: ConfirmedChecker(NLIChecker(), LLMJudgeChecker()), "NLI+Judge")]
+               run(lambda: NLIChecker(lex_fallback=True), "NLI+lex"),
+               run(lambda: NLIChecker(lex_fallback=True, negation_gate=True), "NLI+lex+neg")]
 
     # --- headline metrics ---------------------------------------------------
     print(f"\n  {'checker':<18}{'acc':>6}{'prec':>7}{'rec':>7}{'f1':>6}{'med ms':>9}")
@@ -176,10 +176,10 @@ def main():
 
     # --- the loop (answers 'how do we learn / improve?') --------------------
     print("\n  how to learn & improve:")
-    print("  - honest conclusion: NLI-only is the core (recall 1.00, ~30ms, local). The")
-    print("    cheap OR-cascade does NOT help accuracy and hurts precision -> demoted to an")
-    print("    optional latency mode. The judge CONFIRMER vets NLI's flags to clear false")
-    print("    alarms (precision) -> compare NLI-only vs NLI+Judge above.")
+    print("  - honest conclusion: NLI-only is the core (recall 1.00, ~30ms, local). Its one")
+    print("    weakness is precision on paraphrase (NLI 'neutral' false-alarms). The lexical")
+    print("    confirmer (NLI+lex) clears those -> precision up. Watch the trade: it may cost")
+    print("    a little recall on high-overlap numeric contradictions (a judge confirmer would not).")
     print("  - re-run this eval after every change; watch recall climb. This file is")
     print("    the regression suite that proves an improvement actually improved things.\n")
 
