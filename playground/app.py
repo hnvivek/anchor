@@ -157,7 +157,9 @@ def samples():
 
 def _snippet_for(c, sources):
     src = next((s for s in sources if s.id == c.cite_doc), None)
-    return src.text[c.cite_start:c.cite_end].strip() if src and c.cite_start >= 0 else ""
+    if not src or c.cite_start < 0:
+        return ""
+    return src.text[c.cite_start:c.cite_end].replace("**", "").strip()
 
 
 @app.post("/api/verify")

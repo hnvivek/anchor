@@ -314,9 +314,11 @@ class NLIChecker:
         self._sem = _SemIndex() if retriever == "semantic" else None
 
     def _lex_grounded(self, claim: str, sources: list[Source]) -> bool:
-        """Lexical overlap check, used only to clear NLI 'neutral' paraphrase false-alarms."""
+        """Lexical overlap check, used only to clear NLI 'neutral' paraphrase false-alarms.
+        Strict threshold: only clear when the claim is STRONGLY covered (a likely paraphrase),
+        so a partial-overlap fabrication (e.g. unsupported 'extra 3 PTO days for tenure') stays flagged."""
         if self._lex is None:
-            self._lex = CoverageChecker()
+            self._lex = CoverageChecker(threshold=0.65)
         return self._lex.check(claim, sources).grounded
 
     def available(self) -> bool:
