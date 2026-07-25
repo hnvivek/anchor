@@ -28,21 +28,47 @@ from anchor import CoverageChecker, NLIChecker, Source, Verifier, chunk
 _HERE = Path(__file__).parent
 
 SAMPLES = [
-    {"id": "PTO-Policy", "name": "PTO Policy",
-     "text": "Employees get 15 days of PTO per year. Up to 5 unused days roll over "
-             "into the next year. Requests must be submitted 7 days in advance."},
-    {"id": "SDK-Docs", "name": "API Docs",
-     "text": "The retry_timeout parameter sets how long the client waits before "
-             "retrying a failed request. The default value is 3000, measured in seconds."},
-    {"id": "Remote-Work", "name": "Remote Work Handbook",
-     "text": "Employees may work remotely up to three days per week. A monthly stipend "
-             "of 75 dollars is provided for home internet. Travel to the office is "
-             "required once per quarter."},
+    {"id": "pto", "name": "PTO Policy",
+     "text": "Employees accrue 15 days of paid time off per year. Up to 5 unused days "
+             "roll over into the next year. PTO requests must be submitted at least 7 days in advance."},
+    {"id": "remote", "name": "Remote Work Policy",
+     "text": "Employees may work remotely up to three days per week. Core hours are 10am to 3pm "
+             "Eastern. A stable internet connection of at least 25 Mbps is required for remote work."},
+    {"id": "expense", "name": "Expense Reimbursement",
+     "text": "Travel expenses are reimbursed up to 200 dollars per day for lodging. Meal expenses "
+             "are capped at 75 dollars per day. All expenses require a receipt and manager approval."},
+    {"id": "rate", "name": "API Rate Limits",
+     "text": "The public API allows 1000 requests per minute per API key. Exceeding the limit returns "
+             "a 429 status code. Clients should implement exponential backoff when retrying."},
+    {"id": "auth", "name": "Authentication",
+     "text": "All API requests require a bearer token in the Authorization header. Tokens expire after "
+             "24 hours. Use the refresh token endpoint to obtain a new access token."},
+    {"id": "retry", "name": "SDK retry_timeout",
+     "text": "The retry_timeout parameter sets how long the client waits before retrying a failed request. "
+             "The default value is 3000, measured in seconds."},
+    {"id": "deploy", "name": "Deployment Runbook",
+     "text": "Production deploys happen on Tuesdays and Thursdays. A deploy requires approval from two "
+             "reviewers. Rollback must be initiated within 15 minutes of a failed deploy."},
+    {"id": "oncall", "name": "On-call Rotation",
+     "text": "The on-call rotation cycles weekly across the engineering team. The primary on-call responds "
+             "to pages within 5 minutes. The secondary on-call is the backup."},
+    {"id": "pricing", "name": "Product Pricing",
+     "text": "The Pro plan costs 49 dollars per user per month. The Enterprise plan requires an annual "
+             "contract. A 14-day free trial is available for new accounts."},
+    {"id": "refund", "name": "Refund Policy",
+     "text": "Refunds are available within 30 days of purchase. Refunds are issued to the original payment "
+             "method. Subscriptions canceled mid-cycle are not refunded."},
+    {"id": "retention", "name": "Data Retention",
+     "text": "Customer data is retained for 7 years after account closure. Backup data is retained for "
+             "90 days. Data deletion requests are processed within 30 days."},
+    {"id": "incident", "name": "Incident Response",
+     "text": "Severity 1 incidents require a response within 15 minutes. The incident commander coordinates "
+             "the response. A postmortem is required for all severity 1 and 2 incidents."},
 ]
 SAMPLE_ANSWER = (
-    "You can roll over up to 5 unused days into next year. "
-    "To request time off, submit your request at least 7 days in advance. "
-    "Employees with 5+ years of tenure qualify for 3 bonus vacation days annually."
+    "Employees can roll over up to 5 unused PTO days into the next year. "
+    "The retry_timeout default is 3000 seconds. "
+    "Staff with 5 years of tenure get an extra 3 PTO days each year."
 )
 
 
