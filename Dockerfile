@@ -12,8 +12,10 @@ RUN pip install --no-cache-dir .[app]
 # the playground app (examples/benchmarks aren't needed at runtime)
 COPY playground ./playground
 
-# pre-cache the NLI model so cold starts are fast (~440MB). Set ANCHOR_CHECKER=coverage to skip.
+# pre-cache BOTH models so runtime is fully offline (HF_HUB_OFFLINE=1 below):
+# the NLI checker (DeBERTa) + the semantic-retrieval embeddings (MiniLM).
 RUN ANCHOR_CHECKER=nli python -c "from anchor import NLIChecker; NLIChecker()._ensure()"
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
 
 # runtime loads the precached model from the image only - no HuggingFace contact,
 # no update-ping warning. (Set AFTER the precache so the build can still download.)
