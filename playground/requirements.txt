@@ -1,0 +1,4 @@
+# anchor playground (FastAPI app) dependencies = the library + a server.
+-r ../requirements.txt
+fastapi>=0.110
+uvicorn[standard]>=0.27

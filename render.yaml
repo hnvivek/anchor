@@ -1,0 +1,11 @@
+# One-click deploy on Render (container PaaS). Works on Railway / Fly / any Docker host too.
+# The NLI model needs ~2GB RAM -> use the "standard" plan. For a tiny/free tier set
+# ANCHOR_CHECKER=coverage to run the zero-model mode (no model download, ~instant).
+services:
+  - type: web
+    name: anchor
+    runtime: docker
+    plan: standard
+    envVars:
+      - key: ANCHOR_CHECKER
+        value: nli

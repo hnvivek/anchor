@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+audit.log
+.DS_Store
+node_modules/
+*.egg-info/

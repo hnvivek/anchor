@@ -1,0 +1,6 @@
+# anchor library dependencies.
+# The coverage checker is pure-Python (no third-party deps). The NLI core needs:
+sentence-transformers>=2.5
+transformers>=4.40
+sentencepiece>=0.2
+numpy
