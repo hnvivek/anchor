@@ -83,6 +83,19 @@ CASES = [
                         "When a build fails, the pipeline may retry up to three times.", True),
     ("subtle-grounded", [PTO], "You should submit time-off requests about a week in advance.", True),
     ("subtle-grounded", [API], "By default, retry_timeout is set to 3000 seconds.", True),
+    # vague-claim retrieval: all supported by Remote Work hours; "10 to 3" is the hard one
+    ("hours-paraphrase",
+     [Source(id="pto-h", text="Manager approval is required for any request exceeding 3 consecutive days."),
+      Source(id="remote-h", text="Core hours are 10am to 3pm Eastern, during which staff must be reachable.")],
+     "We operate between 10am to 3pm Eastern.", True),
+    ("hours-paraphrase",
+     [Source(id="pto-h", text="Manager approval is required for any request exceeding 3 consecutive days."),
+      Source(id="remote-h", text="Core hours are 10am to 3pm Eastern, during which staff must be reachable.")],
+     "We operate between 10 to 3 EST.", True),
+    ("hours-paraphrase",
+     [Source(id="pto-h", text="Manager approval is required for any request exceeding 3 consecutive days."),
+      Source(id="remote-h", text="Core hours are 10am to 3pm Eastern, during which staff must be reachable.")],
+     "We operate between 10 to 3.", True),
 ]
 
 
