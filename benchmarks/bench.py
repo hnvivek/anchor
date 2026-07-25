@@ -18,6 +18,7 @@ import json
 import statistics
 import sys
 import time
+from pathlib import Path
 
 from anchor import (CoverageChecker, EnsembleChecker, NLIChecker, Source, Verifier)
 
@@ -63,7 +64,8 @@ def score(cases, make, label):
 
 
 def main():
-    path = sys.argv[1] if len(sys.argv) > 1 else "bench.json"
+    default = str(Path(__file__).resolve().parent / "bench.json")
+    path = sys.argv[1] if len(sys.argv) > 1 else default
     cases = load_cases(path)
     print(f"anchor benchmark  -  {path}  ({len(cases)} cases)\n")
     results = [score(cases, lambda: EnsembleChecker(CoverageChecker()), "Cov+Num"),

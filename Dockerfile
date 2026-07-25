@@ -4,17 +4,15 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends git \
     && rm -rf /var/lib/apt/lists/*
 
-# library deps, then app deps (app deps pull the library via -r ../requirements.txt)
-COPY requirements.txt ./
-COPY playground/requirements.txt playground/requirements.txt
-RUN pip install --no-cache-dir -r playground/requirements.txt
+# install the anchor package + the [app] extra (NLI core deps + fastapi/uvicorn)
+COPY pyproject.toml README.md ./
+COPY anchor ./anchor
+RUN pip install --no-cache-dir .[app]
 
-# the library + the playground app
-COPY anchor.py ./
+# the playground app (examples/benchmarks aren't needed at runtime)
 COPY playground ./playground
 
-# Pre-cache the NLI model so cold starts are fast (~440MB into the image layer).
-# Set ANCHOR_CHECKER=coverage at runtime to skip the model entirely (tiny tier).
+# pre-cache the NLI model so cold starts are fast (~440MB). Set ANCHOR_CHECKER=coverage to skip.
 RUN ANCHOR_CHECKER=nli python -c "from anchor import NLIChecker; NLIChecker()._ensure()"
 
 ENV ANCHOR_CHECKER=nli

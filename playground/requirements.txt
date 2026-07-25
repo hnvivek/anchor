@@ -1,4 +1,3 @@
-# anchor playground (FastAPI app) dependencies = the library + a server.
--r ../requirements.txt
-fastapi>=0.110
-uvicorn[standard]>=0.27
+# editable install of the anchor package (parent dir) with the [app] extra.
+# run from anywhere:  pip install -r playground/requirements.txt
+-e ..[app]
