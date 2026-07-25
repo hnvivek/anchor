@@ -4,6 +4,8 @@
 
 Spell-check, but for facts. Give `anchor` an AI-generated answer and the source documents it should have drawn from: it splits the answer into atomic claims, verifies each against the sources, attaches an **inline citation** to every grounded claim (pointing to the exact `doc_id:start-end`), and flags the ones that aren't supported. **0.93 F1 on the FEVER public benchmark, fully local, no API.**
 
+**Live demo:** https://anchor-production-44a7.up.railway.app/
+
 ## Screenshots
 
 The playground highlights the answer in place - blue underline = cited (hover for the source), red underline = needs review:
@@ -65,7 +67,9 @@ pip install -e .[app]              # adds fastapi + uvicorn
 cd playground && uvicorn app:app --reload      # http://localhost:8000
 ```
 
-Deploy to any container PaaS - see `Dockerfile` / `render.yaml`. Set `ANCHOR_CHECKER=coverage` for a zero-model, low-RAM mode on small hosting tiers.
+**Already live:** https://anchor-production-44a7.up.railway.app/
+
+Deploy your own to any container PaaS - see `Dockerfile` / `render.yaml`. The NLI model needs ~2 GB RAM; for a low-traffic demo, enable scale-to-zero so you don't pay while idle.
 
 ## Why
 
