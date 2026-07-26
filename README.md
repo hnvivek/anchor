@@ -81,15 +81,43 @@ Telling an LLM *"only answer from the sources"* helps - but it doesn't **guarant
 
 ## How it works
 
-Each claim is verified through a pluggable checker interface:
+anchor verifies each claim against your source documents through a layered pipeline.
 
-| checker | what it catches | cost |
+### NLI verification (the core)
+
+NLI (Natural Language Inference) judges the logical relationship between a source and a claim - entailment, contradiction, or neutral. The model uses cross-attention to compare them word-by-word, which is why it catches contradictions that similarity models miss.
+
+```
+source sentence (retrieved)  ->  PREMISE
+AI's claim                  ->  HYPOTHESIS
+                                  |
+                        NLI model (DeBERTa)
+                                  |
+                    +-------------+-------------+
+                 entailment   contradiction    neutral
+                    |             |              |
+               grounded       flagged      -> confirmers
+               (cite source)                (lex + negation gate)
+```
+
+The three-way signal drives anchor's routing:
+
+- **Entailment** -> grounded. Cite the source. Done.
+- **Contradiction** -> flagged. The source disproves the claim. Reliable catch.
+- **Neutral** -> the model is unsure. The **confirmers** decide: lexical check (is it a paraphrase?) + negation gate (is there a "not" flip?). If neither fires -> keep flagged (conservative).
+
+### The full stack
+
+| layer | what it does | cost |
 |---|---|---|
-| **NLIChecker** (DeBERTa) | paraphrase, binding/entity-swap, numeric, negation, conditionals | local, ~15 ms |
-| **lex confirmer + negation gate** | clears paraphrase false-alarms; keeps "do **not** need vs **must**" flagged | pure Python, free |
-| **LLMJudgeChecker** | clears the last false alarms (precision confirmer) | optional, your key |
+| **semantic retrieval** | finds the right source by meaning (embeddings) | local, ~15 ms |
+| **NLI (DeBERTa)** | entailment / contradiction / neutral judgment | local, ~40 ms |
+| **lex confirmer** | clears paraphrase false-alarms (high overlap = paraphrase) | pure Python, free |
+| **negation gate** | keeps "do **not** need vs **must**" flagged | pure Python, free |
+| **decomposition** | splits compound sentences ("A and B") into atomic claims | pure Python, free |
+| **LLM judge** (optional) | clears the last false alarms (precision confirmer) | your key, ~c per call |
 
-The recommended core uses **semantic retrieval** (embeddings) to find the right source by meaning, then verifies with **NLI + lex + neg**: NLI's entailment/contradiction are reliable; when NLI is unsure ("neutral"), a lexical confirmer clears paraphrases and a negation/antonym gate keeps opposites flagged. (Lexical retrieval is also available via `retriever="lexical"` - faster, but more easily fooled by word-similar distractor docs.) Every grounded claim returns an exact citation; every verdict appends to an append-only JSONL audit log.
+Semantic retrieval is the default (more robust on vague claims); lexical retrieval (`retriever="lexical"`) is available as a faster fallback. Compound sentences are decomposed on conjunctions so "tokens expire 24h and pro plan costs $99" becomes two independent claims. Every grounded claim returns an exact citation (`doc:start-end`); every verdict appends to an append-only JSONL audit log.
 
 ## Project layout
 
