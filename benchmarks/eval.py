@@ -96,6 +96,22 @@ CASES = [
      [Source(id="pto-h", text="Manager approval is required for any request exceeding 3 consecutive days."),
       Source(id="remote-h", text="Core hours are 10am to 3pm Eastern, during which staff must be reachable.")],
      "We operate between 10 to 3.", True),
+    # compound decomposition: multi-fact sentences split on conjunctions
+    ("compound-and",
+     [Source(id="auth-c", text="Access tokens expire after 24 hours. Refresh tokens expire after 30 days."),
+      Source(id="pricing-c", text="The Pro plan costs 49 dollars per user per month.")],
+     "Access tokens expire after 24 hours and the Pro plan costs 49 dollars.", True),
+    ("compound-but",
+     [Source(id="auth-c", text="Access tokens expire after 24 hours."),
+      Source(id="pricing-c", text="The Pro plan costs 49 dollars per user per month.")],
+     "Access tokens expire after 24 hours but the Pro plan costs 99 dollars.", False),
+    ("compound-however",
+     [Source(id="pricing-c", text="The Pro plan costs 49 dollars per user per month."),
+      Source(id="refund-c", text="Refunds are available within 30 days of purchase.")],
+     "The Pro plan costs 49 dollars however refunds take 60 days.", False),
+    ("compound-half",
+     [Source(id="pto-c", text="Employees accrue 15 days of paid time off per year.")],
+     "Employees get 15 days of PTO and a free puppy on hire.", False),
 ]
 
 
@@ -106,9 +122,9 @@ def run(make, label):
     lat = []
     for cat, sources, claim, expected in CASES:
         t0 = time.perf_counter()
-        c = Verifier(sources, chk).verify(claim)[0]
+        claims = Verifier(sources, chk).verify(claim)
         lat.append((time.perf_counter() - t0) * 1000)
-        pred = c.grounded
+        pred = all(c.grounded for c in claims)
         d = by_cat.setdefault(cat, {"ok": 0, "n": 0})
         d["n"] += 1
         if pred == expected:

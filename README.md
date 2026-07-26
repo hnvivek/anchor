@@ -42,7 +42,7 @@ anchor is tested on two benchmarks:
 | benchmark | what it tests | accuracy | F1 |
 |---|---|---|---|
 | **FEVER** (public dataset) | real fact-checking: does a claim follow from its evidence? | 0.93 | 0.93 |
-| **Stress set** (27 edge cases) | paraphrases, wrong numbers, entity swaps, negations, compound sentences | 0.96 | 0.97 |
+| **Stress set** (31 edge cases) | paraphrases, wrong numbers, entity swaps, negations, compound sentences | 0.94 | 0.95 |
 
 [FEVER](https://fever.ai) is the standard academic benchmark for fact-checking. The stress set tests edge cases that matter in production - hallucinations, number swaps, "do NOT" vs "must", and sentences with mixed right/wrong facts.
 
