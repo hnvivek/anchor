@@ -481,10 +481,11 @@ class AuditLog:
 # --- verifier ---------------------------------------------------------------
 
 def _decompose(sentence: str) -> list[str]:
-    """Split a compound sentence into sub-claims on conjunctions (' and ', '; ').
-    Conservative: only splits when both halves are >=3 words (avoids 'R&D',
-    'salt and pepper'). Recursive: 'A and B and C' -> ['A', 'B', 'C']."""
-    parts = re.split(r"\s+(?:and|;)\s+", sentence, maxsplit=1)
+    """Split a compound sentence into sub-claims on conjunctions and transitions.
+    Covers: and, but, so, yet, however, moreover, furthermore, additionally,
+    therefore, consequently, nevertheless, ;
+    Conservative: only splits when both halves are >=3 words."""
+    parts = re.split(r"\s+(?:and|but|so|yet|however|moreover|furthermore|additionally|therefore|consequently|nevertheless|;)\s+", sentence, maxsplit=1)
     if len(parts) == 2 and len(parts[0].split()) >= 3 and len(parts[1].split()) >= 3:
         return _decompose(parts[0].strip()) + _decompose(parts[1].strip())
     return [sentence]

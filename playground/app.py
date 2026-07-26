@@ -172,10 +172,13 @@ def verify(req: VerifyReq):
     for c in claims:
         entry = {"text": c.text, "grounded": c.grounded, "citation": None}
         if c.grounded and c.cite_doc:
-            cit = {"n": len(cited) + 1, "doc_id": c.cite_doc,
-                   "start": c.cite_start, "end": c.cite_end, "snippet": _snippet_for(c, srcs)}
-            cited.append(cit)
-            entry["citation"] = cit
+            if cited and cited[-1]["doc_id"] == c.cite_doc and cited[-1]["start"] == c.cite_start:
+                entry["citation"] = cited[-1]
+            else:
+                cit = {"n": len(cited) + 1, "doc_id": c.cite_doc,
+                       "start": c.cite_start, "end": c.cite_end, "snippet": _snippet_for(c, srcs)}
+                cited.append(cit)
+                entry["citation"] = cit
         out.append(entry)
     chunks = [{"id": s.id, "chunks": chunk(s.text)} for s in srcs]
     return {"claims": out, "chunks": chunks, "ms": ms}

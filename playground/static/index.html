@@ -136,7 +136,8 @@ async function verify(){
     const ng = (r.claims||[]).filter(c=>c.grounded).length;
     const nf = (r.claims||[]).length - ng;
     $('summary').innerHTML = `<span class="ok">${ng} cited</span> · <span class="warn">${nf} review</span> · <span class="text-slate-400">${r.ms ?? '?'}ms</span>`;
-    const cits = (r.claims||[]).filter(c=>c.citation);
+    const seen = new Set();
+    const cits = (r.claims||[]).filter(c=>c.citation && !seen.has(c.citation.n) && seen.add(c.citation.n));
     $('citations').innerHTML = cits.length ? cits.map(c=>`<div class="flex gap-1.5"><span class="badge shrink-0">${c.citation.n}</span><span><b>${esc(docName(c.citation.doc_id))}</b> — “${esc(c.citation.snippet)}”</span></div>`).join('') : '<div class="text-slate-400">None.</div>';
     $('resultsec').scrollIntoView({behavior:'smooth', block:'nearest'});
   } catch(e){
