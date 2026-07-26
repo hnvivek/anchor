@@ -480,6 +480,16 @@ class AuditLog:
 
 # --- verifier ---------------------------------------------------------------
 
+def _decompose(sentence: str) -> list[str]:
+    """Split a compound sentence into sub-claims on conjunctions (' and ', '; ').
+    Conservative: only splits when both halves are >=3 words (avoids 'R&D',
+    'salt and pepper'). Recursive: 'A and B and C' -> ['A', 'B', 'C']."""
+    parts = re.split(r"\s+(?:and|;)\s+", sentence, maxsplit=1)
+    if len(parts) == 2 and len(parts[0].split()) >= 3 and len(parts[1].split()) >= 3:
+        return _decompose(parts[0].strip()) + _decompose(parts[1].strip())
+    return [sentence]
+
+
 class Verifier:
     def __init__(self, sources: list[Source], checker: Checker | None = None,
                  audit: AuditLog | None = None, checker_name: str = ""):
@@ -489,7 +499,10 @@ class Verifier:
         self.checker_name = checker_name or type(self.checker).__name__
 
     def verify(self, output: str) -> list[Claim]:
-        claims = [self.checker.check(s, self.sources) for s in _sentences(output)]
+        claims = []
+        for sentence in _sentences(output):
+            for sub in _decompose(sentence):
+                claims.append(self.checker.check(sub, self.sources))
         if self.audit:
             for c in claims:
                 self.audit.log(c.text, c.grounded, c.score, self.checker_name, c.backed_by)
