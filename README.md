@@ -117,7 +117,7 @@ The three-way signal drives anchor's routing:
 | **decomposition** | splits compound sentences ("A and B") into atomic claims | pure Python, free |
 | **LLM judge** (optional) | clears the last false alarms (precision confirmer) | your key, ~c per call |
 
-Semantic retrieval is the default (more robust on vague claims); lexical retrieval (`retriever="lexical"`) is available as a faster fallback. Compound sentences are decomposed on conjunctions so "tokens expire 24h and pro plan costs $99" becomes two independent claims. Every grounded claim returns an exact citation (`doc:start-end`); every verdict appends to an append-only JSONL audit log.
+Semantic retrieval is the default (handles vague phrasings like "10 to 3"); lexical retrieval is available as a faster fallback. When a sentence has multiple facts joined by "and", anchor splits them and checks each separately - so "tokens expire after 24h and the pro plan costs $99" becomes two independent checks, each with its own citation or flag. Every result is logged to a permanent audit trail.
 
 ## Project layout
 
