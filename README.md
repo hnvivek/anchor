@@ -35,20 +35,18 @@ print(render_markdown(result))
 
 See [`examples/usage.py`](examples/usage.py) for a runnable version.
 
-## Benchmark
+## Does it work?
 
-**FEVER** (the standard public fact-checking benchmark - claim + gold evidence -> SUPPORTS/REFUTES, n=200):
+anchor is tested on two benchmarks:
 
-| | accuracy | precision | recall | F1 |
-|---|---|---|---|---|
-| **anchor (NLI + lex + neg)** | **0.93** | 0.90 | **0.95** | **0.93** |
+| benchmark | what it tests | accuracy | F1 |
+|---|---|---|---|
+| **FEVER** (public dataset) | real fact-checking: does a claim follow from its evidence? | 0.93 | 0.93 |
+| **Stress set** (27 edge cases) | paraphrases, wrong numbers, entity swaps, negations, compound sentences | 0.96 | 0.97 |
 
-Plus a 27-case stress set (paraphrase, fabrication, numeric, negation, entity-swap, conditionals, multi-doc, dates/units):
+[FEVER](https://fever.ai) is the standard academic benchmark for fact-checking. The stress set tests edge cases that matter in production - hallucinations, number swaps, "do NOT" vs "must", and sentences with mixed right/wrong facts.
 
-| checker | acc | prec | recall | F1 |
-|---|---|---|---|---|
-| NLI-only | 0.85 | 0.82 | 1.00 | 0.90 |
-| **NLI + lex + neg** | **0.96** | **0.95** | **1.00** | **0.97** |
+Reproduce: `python benchmarks/eval.py` (stress set) - `python benchmarks/bench_fever.py` (FEVER)
 
 ## Examples & benchmarks
 
